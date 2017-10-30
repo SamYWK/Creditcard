@@ -16,6 +16,7 @@ from sklearn.metrics import recall_score
 df = pd.read_csv('creditcard.csv')
 normal_index = np.array(df[df.Class==0].index)
 fraud_index = np.array(df[df.Class==1].index)
+
 #under sampling
 random_normal_index = np.random.choice(normal_index, len(fraud_index), replace = False)
 under_sample_index = np.concatenate([random_normal_index, fraud_index])
