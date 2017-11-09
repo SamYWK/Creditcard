@@ -10,8 +10,11 @@ import pandas as pd
 import sklearn.preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import recall_score
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import recall_score
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import average_precision_score
+import matplotlib.pyplot as plt
 
 def load_data():
     df = pd.read_csv('creditcard.csv')
@@ -41,14 +44,52 @@ def logistic_regression(X_train, X_test, y_train):
     logreg = LogisticRegression()
     logreg.fit(X_train, y_train)
     logreg_predict = logreg.predict(X_test)
-    return logreg_predict
+    logreg_score = logreg.decision_function(X_test)
+    return logreg_predict, logreg_score
+
+def pr_curve(y_test, y_score, figure_num):
+    #average precision
+    average_precision = average_precision_score(y_test, y_score)
+    
+    plt.figure(figure_num)
+    precision, recall, _ = precision_recall_curve(y_test, y_score)
+    
+    plt.step(recall, precision, color='b', alpha=0.2,
+             where='post')
+    plt.fill_between(recall, precision, step='post', alpha=0.2,
+                     color='b')
+    
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.ylim([0.0, 1.05])
+    plt.xlim([0.0, 1.0])
+    plt.title('Precision-Recall curve: AP={0:0.3f}'.format(average_precision))
+    plt.show()
+    return None
   
 def main():
     df, normal_index, fraud_index = load_data()
     X, y = under_sampling(df, normal_index, fraud_index)
-    X_train, X_test, y_train, y_test = normalization_train_test_split(X, y)
-    predict = logistic_regression(X_train, X_test, y_train)
+    
+    #split
+    X_train, X_test, y_train, y_test = normalization_train_test_split(df.drop(['Class','Time'], axis = 1), df['Class'])
+    X_train_us, X_test_us, y_train_us, y_test_us = normalization_train_test_split(X, y)
+    
+    #predict
+    predict, score = logistic_regression(X_train, X_test, y_train)
+    predict_us, score_us = logistic_regression(X_train_us, X_test_us, y_train_us)
+    
+    #Without undersampling
     TN, FP, FN, TP = confusion_matrix(y_test.values, predict).ravel()
+    print('\n\nWithout undersampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
-    print(recall_score(y_test.values, predict, average = 'binary'))
+    print('Recall score :', recall_score(y_test, predict, average = 'binary'))
+    pr_curve(y_test, score, 1)
+    
+    #With undersampling
+    TN, FP, FN, TP = confusion_matrix(y_test_us.values, predict_us).ravel()
+    print('\n\nWith undersampling')
+    print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
+    print('Recall score :', recall_score(y_test_us, predict_us, average = 'binary'))
+    pr_curve(y_test_us, score_us, 2)
 main()
