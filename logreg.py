@@ -11,6 +11,7 @@ import sklearn.preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import recall_score
+from sklearn.metrics import confusion_matrix
 
 def load_data():
     df = pd.read_csv('creditcard.csv')
@@ -25,10 +26,10 @@ def under_sampling(df, normal_index, fraud_index):
     under_sample_df = df.iloc[under_sample_index, :]
     
     y = under_sample_df['Class']
-    X = under_sample_df.drop(['Class'], axis = 1)
+    X = under_sample_df.drop(['Class','Time'], axis = 1)
     return X, y
 
-def normalization_split_train_test(X, y):
+def normalization_train_test_split(X, y):
     min_max_scaler = sklearn.preprocessing.MinMaxScaler()
     X['normalized_Amount'] = min_max_scaler.fit_transform(X['Amount'].values.reshape(-1,1))
     X = X.drop(['Amount'], axis = 1)
@@ -41,13 +42,13 @@ def logistic_regression(X_train, X_test, y_train):
     logreg.fit(X_train, y_train)
     logreg_predict = logreg.predict(X_test)
     return logreg_predict
-    
-
-
+  
 def main():
     df, normal_index, fraud_index = load_data()
     X, y = under_sampling(df, normal_index, fraud_index)
-    X_train, X_test, y_train, y_test = normalization_split_train_test(X, y)
+    X_train, X_test, y_train, y_test = normalization_train_test_split(X, y)
     predict = logistic_regression(X_train, X_test, y_train)
+    TN, FP, FN, TP = confusion_matrix(y_test.values, predict).ravel()
+    print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
     print(recall_score(y_test.values, predict, average = 'binary'))
 main()
