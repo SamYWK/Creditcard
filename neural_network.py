@@ -47,10 +47,10 @@ def neural_network(X_train, y_train, X_test, y_test):
     
     init = tf.global_variables_initializer()
     
-    with tf.Session() as sess:
+    with tf.Session(config = tf.ConfigProto(allow_soft_placement = True)) as sess:
         sess.run(init)
         #train neural network
-        for i in range(4):
+        for i in range(1000):
             # training
             sess.run(train_step, feed_dict={X_placeholder: X_train, y_placeholder: y_train})
             if i % 50 == 0:
