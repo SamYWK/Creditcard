@@ -23,13 +23,13 @@ def load_data():
     return df, normal_index, fraud_index
 
 
-def under_sampling(df, normal_index, fraud_index):
-    random_normal_index = np.random.choice(normal_index, len(fraud_index), replace = False)
-    under_sample_index = np.concatenate([random_normal_index, fraud_index])
-    under_sample_df = df.iloc[under_sample_index, :]
+def oversampling(df, normal_index, fraud_index):
+    random_fraud_index = np.random.choice(fraud_index, len(normal_index), replace = True)
+    over_sample_index = np.concatenate([normal_index, random_fraud_index])
+    over_sample_df = df.iloc[over_sample_index, :]
     
-    y = under_sample_df['Class']
-    X = under_sample_df.drop(['Class','Time'], axis = 1)
+    y = over_sample_df['Class']
+    X = over_sample_df.drop(['Class','Time'], axis = 1)
     return X, y
 
 def normalization_train_test_split(X, y):
@@ -69,8 +69,7 @@ def pr_curve(y_test, y_score, figure_num):
   
 def main():
     df, normal_index, fraud_index = load_data()
-    X, y = under_sampling(df, normal_index, fraud_index)
-    
+    X, y = oversampling(df, normal_index, fraud_index)
     #split
     X_train, X_test, y_train, y_test = normalization_train_test_split(df.drop(['Class','Time'], axis = 1), df['Class'])
     X_train_us, X_test_us, y_train_us, y_test_us = normalization_train_test_split(X, y)
@@ -88,7 +87,7 @@ def main():
     
     #With undersampling
     TN, FP, FN, TP = confusion_matrix(y_test_us.values, predict_us).ravel()
-    print('\n\nWith undersampling')
+    print('\n\nWith oversampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
     print('Recall score :', recall_score(y_test_us, predict_us, average = 'binary'))
     pr_curve(y_test_us, score_us, 2)

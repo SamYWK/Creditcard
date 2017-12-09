@@ -23,13 +23,13 @@ def load_data_normalize_Amount(name):
     fraud_index = np.array(df[df.Class==1].index)
     return df, normal_index, fraud_index
 
-def under_sampling(df, normal_index, fraud_index):
-    random_normal_index = np.random.choice(normal_index, len(fraud_index), replace = False)
-    under_sample_index = np.concatenate([random_normal_index, fraud_index])
-    under_sample_df = df.iloc[under_sample_index, :]
+def oversampling(df, normal_index, fraud_index):
+    random_fraud_index = np.random.choice(fraud_index, len(normal_index), replace = True)
+    over_sample_index = np.concatenate([normal_index, random_fraud_index])
+    over_sample_df = df.iloc[over_sample_index, :]
     
-    y = under_sample_df['Class']
-    X = under_sample_df.drop(['Class','Time'], axis = 1)
+    y = over_sample_df['Class']
+    X = over_sample_df.drop(['Class','Time'], axis = 1)
     return X, y
 
 def neural_network(X_train, y_train, X_test, y_test):
@@ -84,7 +84,7 @@ def add_layer(inputs, in_size, out_size, activation_function=None):
 def main(): 
     #data preprocessing
     df, normal_index, fraud_index = load_data_normalize_Amount('creditcard.csv')
-    X, y = under_sampling(df, normal_index, fraud_index)
+    X, y = oversampling(df, normal_index, fraud_index)
     #train test split
 
     X_train_us, X_test_us, y_train_us, y_test_us = train_test_split(X.values, y.values, train_size = 0.8, test_size = 0.2, random_state = 0)
