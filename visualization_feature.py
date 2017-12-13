@@ -7,22 +7,15 @@ Created on Tue Nov  7 17:55:22 2017
 
 
 import pandas as pd
-import numpy as np 
-import tensorflow as tf
-from sklearn.cross_validation import train_test_split
 import matplotlib.pyplot as plt
-from sklearn.utils import shuffle
-from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import matplotlib.gridspec as gridspec
-from sklearn.preprocessing import StandardScaler
-from sklearn.manifold import TSNE
 from matplotlib.font_manager import FontProperties
 
  #loading chinese font 
 font = FontProperties(fname=r"c:\windows\fonts\SimSun.ttc", size=14)
 
-df = pd.read_csv("./input/creditcard.csv")
+df = pd.read_csv("creditcard.csv")
 
 #Select only the anonymized features.
 v_features = df.ix[:,1:29].columns
