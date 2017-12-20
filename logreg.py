@@ -15,6 +15,7 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
 import matplotlib.pyplot as plt
+from sklearn.model_selection import KFold
 
 def load_data():
     df = pd.read_csv('creditcard.csv')
@@ -80,15 +81,15 @@ def main():
     
     #Without undersampling
     TN, FP, FN, TP = confusion_matrix(y_test.values, predict).ravel()
-    print('\n\nWithout undersampling')
+    print('\n\nWithout oversampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
     print('Recall score :', recall_score(y_test, predict, average = 'binary'))
-    pr_curve(y_test, score, 1)
+    #pr_curve(y_test, score, 1)
     
     #With undersampling
     TN, FP, FN, TP = confusion_matrix(y_test_us.values, predict_us).ravel()
     print('\n\nWith oversampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
     print('Recall score :', recall_score(y_test_us, predict_us, average = 'binary'))
-    pr_curve(y_test_us, score_us, 2)
+    #pr_curve(y_test_us, score_us, 2)
 main()

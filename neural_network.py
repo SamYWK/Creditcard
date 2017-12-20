@@ -52,9 +52,9 @@ def neural_network(X_train, y_train, X_test, y_test):
             for i in range(1000):
                 # training
                 sess.run(train_step, feed_dict={X_placeholder: X_train, y_placeholder: y_train})
-                if i % 50 == 0:
+                #if i % 50 == 0:
                     # to see the step improvement
-                    print(sess.run(loss, feed_dict={X_placeholder: X_train, y_placeholder: y_train}))
+                    #print(sess.run(loss, feed_dict={X_placeholder: X_train, y_placeholder: y_train}))
             
             #test
             test_predict = tf.nn.sigmoid(tf.matmul(tf.nn.sigmoid(tf.matmul(X_placeholder, l1_Weights) + l1_biases), pre_Weights) + pre_biases)
@@ -68,6 +68,7 @@ def neural_network(X_train, y_train, X_test, y_test):
                 
         TN, FP, FN, TP = confusion_matrix(y_test, test_predict).ravel()
         print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
+        print('Recall score :', TP / ( TP+FN ))
     return None
 
 
