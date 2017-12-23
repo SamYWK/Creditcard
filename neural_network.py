@@ -37,7 +37,7 @@ def neural_network(X_train, y_train, X_test, y_test):
     with tf.device('/gpu:0'):
         X_placeholder = tf.placeholder(tf.float32, [None, 29])
         y_placeholder = tf.placeholder(tf.float32, [None, 1])
-        l1, l1_Weights, l1_biases = add_layer(X_train, 29, 25, activation_function = tf.nn.sigmoid)
+        l1, l1_Weights, l1_biases = add_layer(X_placeholder, 29, 25, activation_function = tf.nn.sigmoid)
         prediction, pre_Weights, pre_biases  = add_layer(l1, 25, 1, activation_function = tf.nn.sigmoid)
     
         # the error between prediction and real data
