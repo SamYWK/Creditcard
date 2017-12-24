@@ -82,7 +82,7 @@ def add_layer(inputs, in_size, out_size, activation_function=None):
 
 def main(): 
     #data preprocessing
-    df = load_data_normalize_Amount('creditcard.csv')
+    df = load_data_normalize_Amount('creditcard-simple.csv')
     #train test split
     X_train, X_test, y_train, y_test = train_test_split(df.drop(['Time', 'Class'], axis = 1), df['Class'], train_size = 0.8, test_size = 0.2, random_state = 0)
     
