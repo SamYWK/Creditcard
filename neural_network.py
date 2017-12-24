@@ -18,10 +18,7 @@ def load_data_normalize_Amount(name):
     min_max_scaler = MinMaxScaler()
     df['normalized_Amount'] = min_max_scaler.fit_transform(df['Amount'].values.reshape(-1,1))
     df = df.drop(['Amount'], axis = 1)
-    #find normal_index and fraud_index
-    normal_index = np.array(df[df.Class==0].index)
-    fraud_index = np.array(df[df.Class==1].index)
-    return df, normal_index, fraud_index
+    return df
 
 def oversampling(df, normal_index, fraud_index):
     random_fraud_index = np.random.choice(fraud_index, len(normal_index), replace = True)
@@ -30,7 +27,7 @@ def oversampling(df, normal_index, fraud_index):
     
     y = over_sample_df['Class']
     X = over_sample_df.drop(['Class','Time'], axis = 1)
-    return X, y
+    return X.values, y.values
 
 def neural_network(X_train, y_train, X_test, y_test):
     
@@ -84,14 +81,20 @@ def add_layer(inputs, in_size, out_size, activation_function=None):
 
 def main(): 
     #data preprocessing
-    df, normal_index, fraud_index = load_data_normalize_Amount('creditcard.csv')
-    X, y = oversampling(df, normal_index, fraud_index)
+    df = load_data_normalize_Amount('creditcard.csv')
     #train test split
-
-    X_train_us, X_test_us, y_train_us, y_test_us = train_test_split(X.values, y.values, train_size = 0.8, test_size = 0.2, random_state = 0)
-    X_train, X_test, y_train, y_test = train_test_split(df.drop(['Time', 'Class'], axis = 1).values, df['Class'].values, train_size = 0.8, test_size = 0.2, random_state = 0)
+    X_train, X_test, y_train, y_test = train_test_split(df.drop(['Time', 'Class'], axis = 1), df['Class'], train_size = 0.8, test_size = 0.2, random_state = 0)
     
-    neural_network(X_train.astype(np.float32), y_train.reshape(-1, 1), X_test.astype(np.float32), y_test.reshape(-1, 1))
+    #oversampling training data
+    train_normal_index = np.array(y_train[y_train[:] ==0].index)
+    train_fraud_index = np.array(y_train[y_train[:] ==1].index)
+    X_train_us, y_train_us = oversampling(df, train_normal_index, train_fraud_index)
+    #oversampling testing data
+    test_normal_index = np.array(y_test[y_test[:] ==0].index)
+    test_fraud_index = np.array(y_test[y_test[:] ==1].index)
+    X_test_us, y_test_us = oversampling(df, test_normal_index, test_fraud_index)
+    
+    neural_network(X_train.values.astype(np.float32), y_train.values.reshape(-1, 1), X_test.values.astype(np.float32), y_test.values.reshape(-1, 1))
     neural_network(X_train_us.astype(np.float32), y_train_us.reshape(-1, 1), X_test_us.astype(np.float32), y_test_us.reshape(-1, 1))
     return None
 

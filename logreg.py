@@ -23,7 +23,7 @@ def oversampling(df, normal_index, fraud_index):
     
     y = over_sample_df['Class']
     X = over_sample_df.drop(['Class','Time'], axis = 1)
-    return X, y
+    return X.values, y.values
 
 def normalization_train_test_split(X, y):
     min_max_scaler = sklearn.preprocessing.MinMaxScaler()
@@ -76,7 +76,7 @@ def main():
     X_test_us, y_test_us = oversampling(df, test_normal_index, test_fraud_index)
     
     #predict
-    predict, score = logistic_regression(X_train, X_test, y_train)
+    predict, score = logistic_regression(X_train.values, X_test.values, y_train.values)
     predict_us, score_us = logistic_regression(X_train_us, X_test_us, y_train_us)
     
     #Without undersampling
@@ -87,7 +87,7 @@ def main():
     #pr_curve(y_test, score, 1)
     
     #With undersampling
-    TN, FP, FN, TP = confusion_matrix(y_test_us.values, predict_us).ravel()
+    TN, FP, FN, TP = confusion_matrix(y_test_us, predict_us).ravel()
     print('\n\nWith oversampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
     print('Recall score :', recall_score(y_test_us, predict_us, average = 'binary'))
