@@ -12,13 +12,28 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import recall_score
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import average_precision_score
-import matplotlib.pyplot as plt
+import sys
+
+def select_file_name(input_number):
+    file_name = "empty"
+    if (input_number == '0'):
+        sys.exit(0)
+    elif (input_number == '1'):
+        file_name = "creditcard.csv"
+    elif (input_number == '2'):
+        file_name = 'creditcard_feature_deleted.csv'
+    elif (input_number == '3'):
+        file_name = 'creditcard-simple.csv'
+    else:
+        print('Must select correct number !\n')
+    return file_name
 
 def oversampling(df, normal_index, fraud_index):
+    #random select indices in fraud indices with replacement
     random_fraud_index = np.random.choice(fraud_index, len(normal_index), replace = True)
     over_sample_index = np.concatenate([normal_index, random_fraud_index])
+    #shuffle the index
+    np.random.shuffle(over_sample_index)
     over_sample_df = df.iloc[over_sample_index, :]
     
     y = over_sample_df['Class']
@@ -31,7 +46,7 @@ def normalization_train_test_split(X, y):
     X = X.drop(['Amount'], axis = 1)
     
     #split 80% for training , 20% for testing
-    return train_test_split(X, y, train_size = 0.8, random_state = 0)
+    return train_test_split(X, y, test_size = 0.2, random_state = 0)
 
 def logistic_regression(X_train, X_test, y_train):
     logreg = LogisticRegression(C = 0.1)
@@ -39,29 +54,23 @@ def logistic_regression(X_train, X_test, y_train):
     logreg_predict = logreg.predict(X_test)
     logreg_score = logreg.decision_function(X_test)
     return logreg_predict, logreg_score
-
-def pr_curve(y_test, y_score, figure_num):
-    #average precision
-    average_precision = average_precision_score(y_test, y_score)
-    
-    plt.figure(figure_num)
-    precision, recall, _ = precision_recall_curve(y_test, y_score)
-    
-    plt.step(recall, precision, color='b', alpha=0.2,
-             where='post')
-    plt.fill_between(recall, precision, step='post', alpha=0.2,
-                     color='b')
-    
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.ylim([0.0, 1.05])
-    plt.xlim([0.0, 1.0])
-    plt.title('Precision-Recall curve: AP={0:0.3f}'.format(average_precision))
-    plt.show()
-    return None
   
 def main():
-    df = pd.read_csv('creditcard.csv')
+    #data selection
+    while(True):
+        print('***************************************')
+        print('*  Which file are you going to load?  *')
+        print('*                                     *\
+                 \n*  1)creditcard.csv                   *\
+                 \n*  2)creditcard_feature_deleted.csv   *\
+                 \n*  3)creditcard-simple.csv            *\
+                 \n*  0)Exit                             *')
+        print('***************************************')
+        file_num = input('Input number : ')
+        file_name = select_file_name(file_num)
+        if file_name != 'empty':
+            break
+    df = pd.read_csv(file_name)
 
     #split
     X_train, X_test, y_train, y_test = normalization_train_test_split(df.drop(['Class','Time'], axis = 1), df['Class'])
@@ -83,13 +92,11 @@ def main():
     TN, FP, FN, TP = confusion_matrix(y_test.values, predict).ravel()
     print('\n\nWithout oversampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
-    print('Recall score :', recall_score(y_test, predict, average = 'binary'))
-    #pr_curve(y_test, score, 1)
+    print('Recall score :', recall_score(y_test.values, predict, average = 'binary'))
     
     #With undersampling
     TN, FP, FN, TP = confusion_matrix(y_test_us, predict_us).ravel()
     print('\n\nWith oversampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
     print('Recall score :', recall_score(y_test_us, predict_us, average = 'binary'))
-    #pr_curve(y_test_us, score_us, 2)
 main()

@@ -11,6 +11,21 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
+import sys
+
+def select_file_name(input_number):
+    file_name = "empty"
+    if (input_number == '0'):
+        sys.exit(0)
+    elif (input_number == '1'):
+        file_name = "creditcard.csv"
+    elif (input_number == '2'):
+        file_name = 'creditcard_feature_deleted.csv'
+    elif (input_number == '3'):
+        file_name = 'creditcard-simple.csv'
+    else:
+        print('Must select correct number !\n')
+    return file_name
 
 def load_data_normalize_Amount(name):
     df = pd.read_csv(name)
@@ -23,6 +38,8 @@ def load_data_normalize_Amount(name):
 def oversampling(df, normal_index, fraud_index):
     random_fraud_index = np.random.choice(fraud_index, len(normal_index), replace = True)
     over_sample_index = np.concatenate([normal_index, random_fraud_index])
+    #shuffle the index
+    np.random.shuffle(over_sample_index)
     over_sample_df = df.iloc[over_sample_index, :]
     
     y = over_sample_df['Class']
@@ -80,11 +97,25 @@ def add_layer(inputs, in_size, out_size, activation_function=None):
         outputs = activation_function(Wx_plus_b)
     return outputs, Weights, biases
 
-def main(): 
+def main():
+    #data selection
+    while(True):
+        print('***************************************')
+        print('*  Which file are you going to load?  *')
+        print('*                                     *\
+                 \n*  1)creditcard.csv                   *\
+                 \n*  2)creditcard_feature_deleted.csv   *\
+                 \n*  3)creditcard-simple.csv            *\
+                 \n*  0)Exit                             *')
+        print('***************************************')
+        file_num = input('Input number : ')
+        file_name = select_file_name(file_num)
+        if file_name != 'empty':
+            break
     #data preprocessing
-    df = load_data_normalize_Amount('creditcard.csv')
+    df = load_data_normalize_Amount(file_name)
     #train test split
-    X_train, X_test, y_train, y_test = train_test_split(df.drop(['Time', 'Class'], axis = 1), df['Class'], train_size = 0.8, test_size = 0.2, random_state = 0)
+    X_train, X_test, y_train, y_test = train_test_split(df.drop(['Time', 'Class'], axis = 1), df['Class'], test_size = 0.2, random_state = 0)
     
     #oversampling training data
     train_normal_index = np.array(y_train[y_train[:] ==0].index)
