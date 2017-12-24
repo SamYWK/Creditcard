@@ -58,14 +58,11 @@ def logistic_regression(X_train, X_test, y_train):
 def main():
     #data selection
     while(True):
-        print('***************************************')
-        print('*  Which file are you going to load?  *')
-        print('*                                     *\
-                 \n*  1)creditcard.csv                   *\
-                 \n*  2)creditcard_feature_deleted.csv   *\
-                 \n*  3)creditcard-simple.csv            *\
-                 \n*  0)Exit                             *')
-        print('***************************************')
+        print('Which file are you going to load?')
+        print('\n1)creditcard.csv\
+                 \n2)creditcard_feature_deleted.csv\
+                 \n3)creditcard-simple.csv\
+                 \n0)Exit')
         file_num = input('Input number : ')
         file_name = select_file_name(file_num)
         if file_name != 'empty':
