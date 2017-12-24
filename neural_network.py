@@ -12,6 +12,9 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 import sys
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import f1_score
+from sklearn.metrics import recall_score
 
 def select_file_name(input_number):
     file_name = "empty"
@@ -46,7 +49,42 @@ def oversampling(df, normal_index, fraud_index):
     X = over_sample_df.drop(['Class','Time'], axis = 1)
     return X.values, y.values
 
-def neural_network(X_train, y_train, X_test, y_test):
+def undersampling(df, normal_index, fraud_index):
+    #random select indices in fraud indices with replacement
+    random_normal_index = np.random.choice(normal_index, len(fraud_index), replace = False)
+    under_sample_index = np.concatenate([random_normal_index, fraud_index])
+    #shuffle the index
+    np.random.shuffle(under_sample_index)
+    under_sample_df = df.iloc[under_sample_index, :]
+    
+    y = under_sample_df['Class']
+    X = under_sample_df.drop(['Class','Time'], axis = 1)
+    return X.values, y.values
+
+def KFold(X, y):
+    #5 folds
+    skf = StratifiedKFold(n_splits=5)
+    
+    threshold_range = np.arange(0.0, 1.0, 0.2)
+    #store the best c
+    best_threshold = -1
+    best_score = -1
+    #for every c
+    for threshold in threshold_range:
+        avg_score = 0
+        for train_index, cross_index in skf.split(X, y):
+            y_predict = neural_network(X[train_index], y[train_index].reshape(-1, 1), X[cross_index], y[cross_index], threshold)
+            score = f1_score(y[cross_index], y_predict, average = 'binary')
+            avg_score += score
+        #averaging the score
+        avg_score = avg_score/5
+        #pick a best c
+        if avg_score> best_score:
+            best_score = avg_score
+            best_threshold = threshold
+    return best_threshold   
+
+def neural_network(X_train, y_train, X_test, y_test, threshold):
     n, d = X_train.shape
     
     with tf.device('/gpu:0'):
@@ -76,15 +114,12 @@ def neural_network(X_train, y_train, X_test, y_test):
             test_predict = sess.run(test_predict, feed_dict={X_placeholder: X_test})
         
         for index in range(len(test_predict)):
-            if test_predict[index] >= 0.5:
+            if test_predict[index] >= threshold:
                 test_predict[index] = 1
             else:
                 test_predict[index] = 0
                 
-        TN, FP, FN, TP = confusion_matrix(y_test, test_predict).ravel()
-        print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
-        print('Recall score :', TP / ( TP+FN ))
-    return None
+    return test_predict
 
 
 def add_layer(inputs, in_size, out_size, activation_function=None):
@@ -117,14 +152,33 @@ def main():
     #oversampling training data
     train_normal_index = np.array(y_train[y_train[:] ==0].index)
     train_fraud_index = np.array(y_train[y_train[:] ==1].index)
-    X_train_us, y_train_us = oversampling(df, train_normal_index, train_fraud_index)
+    X_train_os, y_train_os = oversampling(df, train_normal_index, train_fraud_index)
     #oversampling testing data
     test_normal_index = np.array(y_test[y_test[:] ==0].index)
     test_fraud_index = np.array(y_test[y_test[:] ==1].index)
-    X_test_us, y_test_us = oversampling(df, test_normal_index, test_fraud_index)
+    X_test_os, y_test_os = oversampling(df, test_normal_index, test_fraud_index)
     
-    neural_network(X_train.values.astype(np.float32), y_train.values.reshape(-1, 1), X_test.values.astype(np.float32), y_test.values.reshape(-1, 1))
-    neural_network(X_train_us.astype(np.float32), y_train_us.reshape(-1, 1), X_test_us.astype(np.float32), y_test_us.reshape(-1, 1))
+    #cross-validation for unbalanced data
+    threshold_unbalanced = KFold(X_train.values, y_train.values)
+    #undersampling data for cross-validation
+    X_train_us, y_train_us = undersampling(df, train_normal_index, train_fraud_index)
+    threshold_balanced = KFold(X_train_us, y_train_us)
+    
+    #train neural network and return prediction
+    predict = neural_network(X_train.values.astype(np.float32), y_train.values.reshape(-1, 1), X_test.values.astype(np.float32), y_test.values.reshape(-1, 1), threshold_unbalanced)
+    predict_os = neural_network(X_train_os.astype(np.float32), y_train_os.reshape(-1, 1), X_test_os.astype(np.float32), y_test_os.reshape(-1, 1), threshold_balanced)
+    
+    #Without undersampling
+    TN, FP, FN, TP = confusion_matrix(y_train.values, predict).ravel()
+    print('\n\nWithout oversampling')
+    print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
+    print('Recall score :', recall_score(y_test.values, predict, average = 'binary'))
+    
+    #With undersampling
+    TN, FP, FN, TP = confusion_matrix(y_train_os, predict_os).ravel()
+    print('\n\nWith oversampling')
+    print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
+    print('Recall score :', recall_score(y_test_os, predict_os, average = 'binary'))
     return None
 
 main()
