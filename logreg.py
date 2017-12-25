@@ -14,6 +14,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import recall_score
 import sys
 from sklearn.model_selection import StratifiedKFold
+import time
 
 def select_file_name(input_number):
     file_name = "empty"
@@ -22,9 +23,9 @@ def select_file_name(input_number):
     elif (input_number == '1'):
         file_name = "creditcard.csv"
     elif (input_number == '2'):
-        file_name = 'creditcard_feature_deleted.csv'
+        file_name = 'creditcard_18_features.csv'
     elif (input_number == '3'):
-        file_name = 'creditcard-simple.csv'
+        file_name = 'creditcard_24_features.csv'
     else:
         print('Must select correct number !\n')
     return file_name
@@ -99,8 +100,8 @@ def main():
     while(True):
         print('Which file are you going to load?')
         print('\n1)creditcard.csv\
-                 \n2)creditcard_feature_deleted.csv\
-                 \n3)creditcard-simple.csv\
+                 \n2)creditcard_18_features.csv\
+                 \n3)creditcard_24_features.csv\
                  \n0)Exit')
         file_num = input('Input number : ')
         file_name = select_file_name(file_num)
@@ -121,25 +122,38 @@ def main():
     X_test_os, y_test_os = oversampling(df, test_normal_index, test_fraud_index)
     
     #cross-validation for unbalanced data
+    print('Calculating best c for logistic regression with unbalanced data...')
     c_unbalanced = KFold(X_train.values, y_train.values)
     #undersampling data for cross-validation
     X_train_us, y_train_us = undersampling(df, train_normal_index, train_fraud_index)
+    print('Calculating best c for logistic regression with balanced data...')
     c_balanced = KFold(X_train_us, y_train_us)
     
     #predict with unbalanced data
+    print('Training unbalanced data and returning prediction...')
+    start_time = time.time()
     predict, score = logistic_regression(X_train.values, X_test.values, y_train.values, c_unbalanced)
-    #predict with balanced data
-    predict_os, score_os = logistic_regression(X_train_os, X_test_os, y_train_os, c_balanced)
+    end_time = time.time()
+    unbalanced_time = end_time - start_time
     
-    #Without undersampling
+    #predict with balanced data
+    print('Training balanced data and returning prediction...')
+    start_time = time.time()
+    predict_os, score_os = logistic_regression(X_train_os, X_test_os, y_train_os, c_balanced)
+    end_time = time.time()
+    balanced_time = end_time - start_time
+    
+    #Without oversampling
     TN, FP, FN, TP = confusion_matrix(y_test.values, predict).ravel()
     print('\n\nWithout oversampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
     print('Recall score :', recall_score(y_test.values, predict, average = 'binary'))
+    print ("It cost %f sec" % unbalanced_time)
     
-    #With undersampling
+    #With oversampling
     TN, FP, FN, TP = confusion_matrix(y_test_os, predict_os).ravel()
     print('\n\nWith oversampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
     print('Recall score :', recall_score(y_test_os, predict_os, average = 'binary'))
+    print ("It cost %f sec" % balanced_time)
 main()

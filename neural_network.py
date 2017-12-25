@@ -15,6 +15,7 @@ import sys
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 from sklearn.metrics import recall_score
+import time
 
 def select_file_name(input_number):
     file_name = "empty"
@@ -23,9 +24,9 @@ def select_file_name(input_number):
     elif (input_number == '1'):
         file_name = "creditcard.csv"
     elif (input_number == '2'):
-        file_name = 'creditcard_feature_deleted.csv'
+        file_name = 'creditcard_18_features.csv'
     elif (input_number == '3'):
-        file_name = 'creditcard-simple.csv'
+        file_name = 'creditcard_24_features.csv'
     else:
         print('Must select correct number !\n')
     return file_name
@@ -62,26 +63,30 @@ def undersampling(df, normal_index, fraud_index):
     return X.values, y.values
 
 def KFold(X, y):
-    #5 folds
-    skf = StratifiedKFold(n_splits=5)
+    #3 folds
+    skf = StratifiedKFold(n_splits=3)
     
-    threshold_range = np.arange(0.0, 1.0, 0.2)
-    #store the best c
+    threshold_range = np.arange(0.0, 1.0, 0.1)
+    #store the best threshold
     best_threshold = -1
     best_score = -1
-    #for every c
+    #for every threshold
     for threshold in threshold_range:
         avg_score = 0
         for train_index, cross_index in skf.split(X, y):
+            #train data
             y_predict = neural_network(X[train_index], y[train_index].reshape(-1, 1), X[cross_index], y[cross_index], threshold)
+            #calculate f1_score
             score = f1_score(y[cross_index], y_predict, average = 'binary')
             avg_score += score
         #averaging the score
-        avg_score = avg_score/5
-        #pick a best c
-        if avg_score> best_score:
+        avg_score = avg_score/3
+        print(avg_score)
+        #pick a best threshold
+        if avg_score > best_score:
             best_score = avg_score
             best_threshold = threshold
+    print(best_threshold)
     return best_threshold   
 
 def neural_network(X_train, y_train, X_test, y_test, threshold):
@@ -90,8 +95,8 @@ def neural_network(X_train, y_train, X_test, y_test, threshold):
     with tf.device('/gpu:0'):
         X_placeholder = tf.placeholder(tf.float32, [None, d])
         y_placeholder = tf.placeholder(tf.float32, [None, 1])
-        l1, l1_Weights, l1_biases = add_layer(X_placeholder, d, 25, activation_function = tf.nn.sigmoid)
-        prediction, pre_Weights, pre_biases  = add_layer(l1, 25, 1, activation_function = tf.nn.sigmoid)
+        l1, l1_Weights, l1_biases = add_layer(X_placeholder, d, 15, activation_function = tf.nn.sigmoid)
+        prediction, pre_Weights, pre_biases  = add_layer(l1, 15, 1, activation_function = tf.nn.sigmoid)
     
         # the error between prediction and real data
         loss = tf.reduce_mean(tf.reduce_sum(tf.square(y_placeholder - prediction), reduction_indices=[1]))
@@ -118,7 +123,6 @@ def neural_network(X_train, y_train, X_test, y_test, threshold):
                 test_predict[index] = 1
             else:
                 test_predict[index] = 0
-                
     return test_predict
 
 
@@ -137,8 +141,8 @@ def main():
     while(True):
         print('Which file are you going to load?')
         print('\n1)creditcard.csv\
-                 \n2)creditcard_feature_deleted.csv\
-                 \n3)creditcard-simple.csv\
+                 \n2)creditcard_18_features.csv\
+                 \n3)creditcard_24_features.csv\
                  \n0)Exit')
         file_num = input('Input number : ')
         file_name = select_file_name(file_num)
@@ -159,26 +163,38 @@ def main():
     X_test_os, y_test_os = oversampling(df, test_normal_index, test_fraud_index)
     
     #cross-validation for unbalanced data
-    threshold_unbalanced = KFold(X_train.values, y_train.values)
+    threshold_unbalanced = 0.5 #KFold(X_train.values, y_train.values)  kFold works, but it takes a long time. You can try it! XD
     #undersampling data for cross-validation
     X_train_us, y_train_us = undersampling(df, train_normal_index, train_fraud_index)
-    threshold_balanced = KFold(X_train_us, y_train_us)
+    threshold_balanced = 0.6 #KFold(X_train_us, y_train_us)  You can try kFold
     
     #train neural network and return prediction
+    print('Training unbalanced data and returning prediction...')
+    start_time = time.time()
     predict = neural_network(X_train.values.astype(np.float32), y_train.values.reshape(-1, 1), X_test.values.astype(np.float32), y_test.values.reshape(-1, 1), threshold_unbalanced)
-    predict_os = neural_network(X_train_os.astype(np.float32), y_train_os.reshape(-1, 1), X_test_os.astype(np.float32), y_test_os.reshape(-1, 1), threshold_balanced)
+    end_time = time.time()
+    unbalanced_time = end_time - start_time
     
-    #Without undersampling
-    TN, FP, FN, TP = confusion_matrix(y_train.values, predict).ravel()
+    print('Training balanced data and returning prediction...')
+    start_time = time.time()
+    predict_os = neural_network(X_train_os.astype(np.float32), y_train_os.reshape(-1, 1), X_test_os.astype(np.float32), y_test_os.reshape(-1, 1), threshold_balanced)
+    end_time = time.time()
+    balanced_time = end_time - start_time
+    
+    #Without oversampling
+    TN, FP, FN, TP = confusion_matrix(y_test.values, predict).ravel()
     print('\n\nWithout oversampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
     print('Recall score :', recall_score(y_test.values, predict, average = 'binary'))
+    print ("It cost %f sec" % unbalanced_time)
     
-    #With undersampling
-    TN, FP, FN, TP = confusion_matrix(y_train_os, predict_os).ravel()
+    #With oversampling
+    TN, FP, FN, TP = confusion_matrix(y_test_os, predict_os).ravel()
     print('\n\nWith oversampling')
     print('TN :', TN, 'FP :', FP, 'FN :', FN, 'TP :', TP)
     print('Recall score :', recall_score(y_test_os, predict_os, average = 'binary'))
+    print ("It cost %f sec" % balanced_time)
+    
     return None
 
 main()
