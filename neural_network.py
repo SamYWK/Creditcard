@@ -95,12 +95,14 @@ def neural_network(X_train, y_train, X_test, y_test, threshold):
     with tf.device('/gpu:0'):
         X_placeholder = tf.placeholder(tf.float32, [None, d])
         y_placeholder = tf.placeholder(tf.float32, [None, 1])
-        l1, l1_Weights, l1_biases = add_layer(X_placeholder, d, 15, activation_function = tf.nn.sigmoid)
-        prediction, pre_Weights, pre_biases  = add_layer(l1, 15, 1, activation_function = tf.nn.sigmoid)
+        l1, l1_Weights, l1_biases = add_layer(X_placeholder, d, 35, activation_function = tf.nn.sigmoid)
+        prediction, pre_Weights, pre_biases  = add_layer(l1, 35, 1, activation_function = None)
     
         # the error between prediction and real data
-        loss = tf.reduce_mean(tf.reduce_sum(tf.square(y_placeholder - prediction), reduction_indices=[1]))
-        train_step = tf.train.GradientDescentOptimizer(0.1).minimize(loss)
+        
+        cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels = y_placeholder, logits = prediction)
+        cross_entropy = tf.reduce_mean(cross_entropy)
+        train_step = tf.train.GradientDescentOptimizer(0.1).minimize(cross_entropy)
         
         init = tf.global_variables_initializer()
         
