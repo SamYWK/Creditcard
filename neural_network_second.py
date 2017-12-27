@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
     #train neural network and return prediction
     print('Training unbalanced data and returning prediction...')
-    df, X_train_us, y_train_us, X_test_us, y_test_us = load_data(0, 0.2, 2)
+    df, X_train_us, y_train_us, X_test_us, y_test_us = load_data(0, 0.2, 0)
     #cross-validation for unbalanced data
     #KFold(X_train.values, y_train.values)  kFold works, but it takes a long time. You can try it! XD
     threshold_unbalanced = 0.5 
@@ -200,7 +200,16 @@ if __name__ == "__main__":
     start_time = time.time()
     predict_os3, cost_summary_os3 = neural_network(X_train_os.values.astype(np.float32), y_train_os.values.reshape(-1, 1), X_test_os.values.astype(np.float32), y_test_os.values.reshape(-1, 1), threshold_balanced)
     end_time = time.time()
-    balanced_time_os3 = end_time - start_time        
+    balanced_time_os3 = end_time - start_time
+
+    print('Training balanced data and returning prediction (vesion 3, 0.2, undersmapling)...')
+    #data preprocessing ,oversampling  data
+    df, X_train_os, X_test_os, y_train_os, y_test_us3 = load_data(3, 0.2, 2)
+    threshold_balanced = 0.6 #KFold(X_train_us, y_train_us)  You can try kFold
+    start_time = time.time()
+    predict_us3, cost_summary_us3 = neural_network(X_train_os.values.astype(np.float32), y_train_os.values.reshape(-1, 1), X_test_os.values.astype(np.float32), y_test_os.values.reshape(-1, 1), threshold_balanced)
+    end_time = time.time()
+    balanced_time_us3 = end_time - start_time            
     
     print('Showing...')   
     show_result('Unbalanced Data', cost_summary, y_test, predict, unbalanced_time)
@@ -208,4 +217,5 @@ if __name__ == "__main__":
     show_result('Balanced Data(vesion 1)', cost_summary_os1, y_test_os1, predict_os1, balanced_time_os1)
     show_result('Balanced Data(vesion 2)', cost_summary_os2, y_test_os2, predict_os2, balanced_time_os2)
     show_result('Balanced Data(vesion 3)', cost_summary_os3, y_test_os3, predict_os3, balanced_time_os3)
+    show_result('Balanced Data(vesion 3 + Undersmapling)', cost_summary_us3, y_test_us3, predict_us3, balanced_time_us3)
     
