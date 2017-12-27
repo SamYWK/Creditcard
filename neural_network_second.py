@@ -113,7 +113,7 @@ def neural_network(X_train, y_train, X_test, y_test, threshold):
             for i in range(1000):
                 # training
                 sess.run(train_step, feed_dict={X_placeholder: X_train, y_placeholder: y_train})
-                if i % 50 == 0:
+                if i % 10 == 0:
                     # to see the step improvement
                     cost_summary.append( sess.run(cross_entropy, feed_dict={X_placeholder: X_train, y_placeholder: y_train}))
             #test
@@ -134,18 +134,21 @@ def show_result(title, summary, y, y_, cost_time):
     info = ''
     
     TN, FP, FN, TP = confusion_matrix(y, y_).ravel()
-    info += 'TN :'+ str(TN)+ ' FP :'+ str(FP) + '\n'
-    info += 'FN :'+ str(FN) + ' TP :'+ str(TP) + '\n'
-    info += 'Recall score : %.2f\n' %recall_score(y_test.values, predict, average = 'binary')
+    info += 'TN : '+ str(TN)+ ' FP : '+ str(FP) + '\n'
+    info += 'FN : '+ str(FN) + ' TP : '+ str(TP) + '\n'
+    info += 'Recall score : %.3f\n' %recall_score(y, y_, average = 'binary')
     info += 'It cost %.2f sec' %cost_time
 
     f, ax = plt.subplots(1, 1, sharex=True, figsize=(8,4))
+    plt.xlim(0,100)
+    plt.ylim(0,2)
     ax.plot(summary) # blue
     ax.set_title(title, fontsize=20)
-    ax.text(10, 0.5, str(info), fontsize=14)
-    plt.xlabel('次數',fontproperties=font)
-    plt.ylabel('Cost值',fontproperties=font)
+    ax.text(50, 1, str(info), fontsize=14)
+    plt.xlabel('遞迴次數(每10次)',fontproperties=font)
+    plt.ylabel('Cross_entropy',fontproperties=font)
     plt.show()
+    f.savefig('./image/'+str(title)+'.png')
         
     return 0
 
@@ -154,7 +157,6 @@ if __name__ == "__main__":
 
     #train neural network and return prediction
     print('Training unbalanced data and returning prediction...')
-    
     df, X_train_us, y_train_us, X_test_us, y_test_us = load_data(0, 0.2, 2)
     #cross-validation for unbalanced data
     #KFold(X_train.values, y_train.values)  kFold works, but it takes a long time. You can try it! XD
@@ -200,10 +202,10 @@ if __name__ == "__main__":
     end_time = time.time()
     balanced_time_os3 = end_time - start_time        
     
-    print('showing...')   
-    show_result('unbalanced data', cost_summary, y_test, predict, unbalanced_time)
-    show_result('balanced data(vesion 0)', cost_summary_os, y_test_os, predict_os, balanced_time_os)
-    show_result('balanced data(vesion 1)', cost_summary_os1, y_test_os1, predict_os1, balanced_time_os1)
-    show_result('balanced data(vesion 2)', cost_summary_os2, y_test_os2, predict_os2, balanced_time_os2)
-    show_result('balanced data(vesion 3)', cost_summary_os3, y_test_os3, predict_os3, balanced_time_os3)
+    print('Showing...')   
+    show_result('Unbalanced Data', cost_summary, y_test, predict, unbalanced_time)
+    show_result('Balanced Data(vesion 0)', cost_summary_os, y_test_os, predict_os, balanced_time_os)
+    show_result('Balanced Data(vesion 1)', cost_summary_os1, y_test_os1, predict_os1, balanced_time_os1)
+    show_result('Balanced Data(vesion 2)', cost_summary_os2, y_test_os2, predict_os2, balanced_time_os2)
+    show_result('Balanced Data(vesion 3)', cost_summary_os3, y_test_os3, predict_os3, balanced_time_os3)
     
